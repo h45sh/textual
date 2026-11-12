@@ -1848,10 +1848,11 @@ class Screen(Generic[ScreenResultType], Widget):
                         container = select_widget
                         content_offset = None
 
-                    self._select_state = self._select_state.update_end(
-                        event.screen_offset,
-                        SelectEnd(container, content_widget, content_offset),
-                    )
+                    if container is not None and getattr(container, "is_attached", True):
+                        self._select_state = self._select_state.update_end(
+                            event.screen_offset,
+                            SelectEnd(container, content_widget, content_offset),
+                        )
 
                 if select_widget is not None:
                     self._check_auto_scroll(
@@ -1907,17 +1908,20 @@ class Screen(Generic[ScreenResultType], Widget):
                         container = select_widget
                         content_offset = None
 
-                    self._select_state = SelectState(
-                        event.screen_offset,
-                        start=SelectStart(
-                            container,
-                            event.screen_offset - container.region.offset,
-                            container.region.offset,
-                            container.scroll_offset,
-                            content_widget=content_widget,
-                            content_offset=content_offset,
-                        ),
-                    )
+                    if container is not None and getattr(container, "is_attached", True):
+                        self._select_state = SelectState(
+                            event.screen_offset,
+                            start=SelectStart(
+                                container,
+                                event.screen_offset - container.region.offset,
+                                container.region.offset,
+                                container.scroll_offset,
+                                content_widget=content_widget,
+                                content_offset=content_offset,
+                            ),
+                        )
+                    else:
+                        self._select_state = None
                 else:
                     self._select_state = None
 

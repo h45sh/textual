@@ -617,6 +617,8 @@ class MarkdownTableCellContents(Static):
 class MarkdownTableContent(Widget):
     """Renders a Markdown table."""
 
+    ALLOW_SELECT = False
+
     DEFAULT_CSS = """
     MarkdownTableContent {
         width: 1fr;

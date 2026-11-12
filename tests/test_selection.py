@@ -225,3 +225,47 @@ async def test_select_out_of_scrollable_container_on_gap():
             assert (
                 f"item-{i:02d}" in selected_text
             ), f"item-{i:02d} missing from {selected_text!r}"
+
+
+async def test_selection_detached_widget_no_crash():
+    """Ensure MouseDown and MouseMove on a widget with None parent does not raise AttributeError."""
+
+    class DummyWidget(Static):
+        ALLOW_SELECT = True
+
+    class DetachedApp(App):
+        def compose(self) -> ComposeResult:
+            yield DummyWidget("Hello")
+
+    app = DetachedApp()
+    async with app.run_test() as pilot:
+        await pilot.pause()
+        widget = app.query_one(DummyWidget)
+
+        detached_widget = DummyWidget("detached")
+        assert detached_widget.parent is None
+
+        # Monkeypatch get_widget_and_offset_at to return a detached widget
+        app.screen.get_widget_and_offset_at = lambda x, y: (detached_widget, Offset(0, 0))
+
+        # MouseDown should not raise AttributeError and should set _select_state to None
+        await pilot.mouse_down(offset=(0, 0))
+        assert app.screen._select_state is None
+
+        # Reset to valid widget to initiate selection
+        app.screen.get_widget_and_offset_at = lambda x, y: (widget, Offset(0, 0))
+        await pilot.mouse_down(offset=(0, 0))
+        assert app.screen._select_state is not None
+
+        # MouseMove over detached widget should not raise AttributeError
+        app.screen.get_widget_and_offset_at = lambda x, y: (detached_widget, Offset(0, 0))
+        await pilot.hover(offset=(1, 0))
+        await pilot.mouse_up(offset=(1, 0))
+
+
+def test_markdown_table_content_allow_select_false():
+    """Ensure MarkdownTableContent has ALLOW_SELECT set to False."""
+    from textual.widgets._markdown import MarkdownTableContent
+
+    assert MarkdownTableContent.ALLOW_SELECT is False
+
